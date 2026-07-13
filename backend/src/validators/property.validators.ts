@@ -6,6 +6,13 @@ export const furnishingEnum = z.enum(['unfurnished', 'semi_furnished', 'furnishe
 export const possessionEnum = z.enum(['ready_to_move', 'under_construction']);
 export const areaUnitEnum = z.enum(['sqft', 'sqyd', 'acre', 'sqm']);
 
+// Nullable optional fields: property detail responses send `null` (not `undefined`) for
+// unset columns (e.g. bhk on a plot listing), and edit forms round-trip that value back on
+// save — treat null the same as "not provided" instead of rejecting it.
+function nullableOptional<T extends z.ZodTypeAny>(schema: T) {
+  return z.preprocess((val) => (val === null ? undefined : val), schema.optional());
+}
+
 export const createPropertySchema = z.object({
   property_type: propertyTypeEnum,
   listing_type: listingTypeEnum,
@@ -19,13 +26,13 @@ export const createPropertySchema = z.object({
   city: z.string().min(2),
   state: z.string().min(2),
   pincode: z.string().min(4).max(10),
-  latitude: z.coerce.number().optional(),
-  longitude: z.coerce.number().optional(),
-  bhk: z.coerce.number().int().min(1).max(20).optional(),
-  bathrooms: z.coerce.number().int().min(0).max(20).optional(),
-  furnishing_status: furnishingEnum.optional(),
-  possession_status: possessionEnum.optional(),
-  age_of_property_years: z.coerce.number().int().min(0).max(150).optional(),
+  latitude: nullableOptional(z.coerce.number()),
+  longitude: nullableOptional(z.coerce.number()),
+  bhk: nullableOptional(z.coerce.number().int().min(1).max(20)),
+  bathrooms: nullableOptional(z.coerce.number().int().min(0).max(20)),
+  furnishing_status: nullableOptional(furnishingEnum),
+  possession_status: nullableOptional(possessionEnum),
+  age_of_property_years: nullableOptional(z.coerce.number().int().min(0).max(150)),
   attributes: z.record(z.any()).optional().default({}),
   amenity_ids: z.array(z.number().int()).optional().default([]),
 });

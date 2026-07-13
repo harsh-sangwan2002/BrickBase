@@ -14,6 +14,7 @@ import { Login } from '@/pages/Login';
 import { Signup } from '@/pages/Signup';
 import { Favorites } from '@/pages/Favorites';
 import { Compare } from '@/pages/Compare';
+import { Profile } from '@/pages/Profile';
 
 import { MyListings } from '@/pages/dashboard/MyListings';
 import { PropertyFormPage } from '@/pages/dashboard/PropertyFormPage';
@@ -44,6 +45,7 @@ function App() {
 
               <Route element={<ProtectedRoute />}>
                 <Route path="/favorites" element={<Favorites />} />
+                <Route path="/profile" element={<Profile />} />
               </Route>
             </Route>
 

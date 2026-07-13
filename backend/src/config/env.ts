@@ -17,7 +17,6 @@ export const env = {
   nodeEnv: process.env.NODE_ENV ?? 'development',
   supabaseUrl: required('SUPABASE_URL'),
   supabaseServiceRoleKey: required('SUPABASE_SERVICE_ROLE_KEY'),
-  supabaseJwtSecret: required('SUPABASE_JWT_SECRET'),
   frontendOrigin: process.env.FRONTEND_ORIGIN ?? 'http://localhost:5173',
   resendApiKey: process.env.RESEND_API_KEY ?? '',
   emailFrom: process.env.EMAIL_FROM ?? 'BrickBase <no-reply@brickbase.app>',

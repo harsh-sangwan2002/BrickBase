@@ -78,7 +78,16 @@ export function MyListings() {
                     Submit for review
                   </Button>
                 )}
-                <Button variant="danger" size="sm" onClick={() => removeMutation.mutate(p.id)}>
+                <Button
+                  variant="danger"
+                  size="sm"
+                  disabled={removeMutation.isPending}
+                  onClick={() => {
+                    if (confirm(`Remove "${p.title}"? It will no longer be visible to buyers.`)) {
+                      removeMutation.mutate(p.id);
+                    }
+                  }}
+                >
                   Remove
                 </Button>
               </div>

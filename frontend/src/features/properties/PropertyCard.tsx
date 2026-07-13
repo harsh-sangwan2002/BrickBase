@@ -1,14 +1,43 @@
-import { Link } from 'react-router-dom';
-import { BedDouble, CheckCircle2, MapPin, Ruler, Scale, Star } from 'lucide-react';
+import { Link, useNavigate } from 'react-router-dom';
+import { BedDouble, CheckCircle2, Heart, MapPin, Ruler, Scale, Star } from 'lucide-react';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import type { PropertySummary } from '@/types';
 import { coverImage, formatArea, formatPrice, propertyTypeLabel } from '@/utils/format';
 import { Badge } from '@/components/Badge';
 import { useCompareStore } from '@/store/compareStore';
+import { useAuth } from '@/hooks/useAuth';
+import { favoritesApi } from '@/api/favorites';
 import clsx from 'clsx';
 
 export function PropertyCard({ property }: { property: PropertySummary }) {
   const isSelected = useCompareStore((s) => s.isSelected(property.id));
   const toggle = useCompareStore((s) => s.toggle);
+  const { session } = useAuth();
+  const navigate = useNavigate();
+  const queryClient = useQueryClient();
+
+  const { data: favorites } = useQuery({
+    queryKey: ['favorites'],
+    queryFn: favoritesApi.list,
+    enabled: Boolean(session),
+    staleTime: 60_000,
+  });
+  const isFavorited = favorites?.items.some((f) => f.property_id === property.id) ?? false;
+
+  const favoriteMutation = useMutation({
+    mutationFn: () => (isFavorited ? favoritesApi.remove(property.id) : favoritesApi.add(property.id)),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['favorites'] }),
+  });
+
+  function handleFavoriteClick(e: React.MouseEvent) {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!session) {
+      navigate('/login');
+      return;
+    }
+    favoriteMutation.mutate();
+  }
 
   return (
     <div className="group overflow-hidden rounded-2xl border border-navy-100 bg-white card-shadow transition-transform hover:-translate-y-1">
@@ -27,6 +56,14 @@ export function PropertyCard({ property }: { property: PropertySummary }) {
               </span>
             )}
           </div>
+          <button
+            onClick={handleFavoriteClick}
+            disabled={favoriteMutation.isPending}
+            aria-label={isFavorited ? 'Remove from favorites' : 'Add to favorites'}
+            className="absolute right-3 bottom-3 flex h-8 w-8 items-center justify-center rounded-full bg-white/90 text-navy-600 shadow-md transition-colors hover:bg-white disabled:opacity-60"
+          >
+            <Heart size={16} className={isFavorited ? 'fill-red-500 text-red-500' : ''} />
+          </button>
           {property.is_featured && (
             <span className="absolute bottom-3 left-3 flex items-center gap-1 rounded-full bg-brand-gradient px-2 py-0.5 text-xs font-semibold text-white">
               <Star size={12} /> Featured

@@ -6,17 +6,21 @@ search/filter/compare, enquiries, favorites, and an admin moderation dashboard.
 ## 1. Supabase project
 
 1. Create a project at supabase.com.
-2. Open the SQL editor and run `database/schema.sql` (tables, enums, RLS, the `handle_new_user` trigger, and seed amenities).
-3. In Storage, create a public bucket named `property-images` (used for listing photo uploads from the frontend).
-4. Grab from Project Settings → API: `Project URL`, `anon public` key, `service_role` key, and the `JWT Secret`.
+2. Open the SQL editor and run `database/schema.sql` in full — tables, enums, RLS, the `handle_new_user` trigger,
+   the `property-images` storage policies, and seed amenities.
+3. In Storage, create a public bucket named `property-images` (5MB limit, jpeg/png/webp) — the SQL above only adds
+   the RLS *policies* for it; the bucket itself must be created via Dashboard → Storage → New bucket, or the
+   Storage API. Without both the bucket and the policies, uploads fail with a 400/RLS error.
+4. Grab from Project Settings → API: `Project URL` and the `service_role` key (backend), and the `anon public` key
+   (frontend). Auth is verified via `supabaseAdmin.auth.getUser()` server-side — no JWT secret needed.
 
 ## 2. Backend (`/backend`)
 
 ```bash
 cd backend
-cp .env.example .env   # fill in SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, SUPABASE_JWT_SECRET
+cp .env.example .env   # fill in SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY
 npm install
-npm run dev             # http://localhost:4000
+npm run dev             # http://localhost:4000 — logs "[supabase] Connected successfully" on boot
 ```
 
 Layered architecture: `routes → controllers → services → repositories → Supabase` (service-role key only, never

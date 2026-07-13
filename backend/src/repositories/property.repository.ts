@@ -122,9 +122,11 @@ export const propertyRepository = {
 
   async create(ownerId: string, payload: Record<string, unknown>) {
     const { amenity_ids, ...rest } = payload as { amenity_ids?: number[] } & Record<string, unknown>;
+    // v1 skips the admin moderation queue — listings go live immediately so owners/agents
+    // and buyers see them right away (no pending_review step).
     const { data, error } = await supabaseAdmin
       .from('properties')
-      .insert({ ...rest, owner_id: ownerId, status: 'draft' })
+      .insert({ ...rest, owner_id: ownerId, status: 'active' })
       .select('*')
       .single();
     if (error) throw error;
@@ -170,10 +172,12 @@ export const propertyRepository = {
   },
 
   async listByOwner(ownerId: string) {
+    // 'inactive' means the owner removed it (soft-delete) — exclude it from their own list too.
     const { data, error } = await supabaseAdmin
       .from('properties')
       .select('*, property_images(image_url, is_cover)')
       .eq('owner_id', ownerId)
+      .neq('status', 'inactive')
       .order('created_at', { ascending: false });
     if (error) throw error;
     return data ?? [];

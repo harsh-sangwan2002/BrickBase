@@ -218,15 +218,17 @@ create table saved_searches (
 -- TRIGGER: auto-create profile row on signup
 -- ============================================================
 create or replace function handle_new_user()
-returns trigger as $$
+returns trigger
+set search_path = public
+as $$
 begin
   insert into public.profiles (id, full_name, phone, role, status)
   values (
     new.id,
     coalesce(new.raw_user_meta_data->>'full_name', ''),
     new.raw_user_meta_data->>'phone',
-    coalesce((new.raw_user_meta_data->>'role')::user_role, 'buyer'),
-    case when (new.raw_user_meta_data->>'role') = 'agent' then 'pending'::user_status else 'active'::user_status end
+    coalesce((new.raw_user_meta_data->>'role')::public.user_role, 'buyer'::public.user_role),
+    case when (new.raw_user_meta_data->>'role') = 'agent' then 'pending'::public.user_status else 'active'::public.user_status end
   );
   return new;
 end;
@@ -259,6 +261,31 @@ create policy "Anyone can insert enquiries" on enquiries for insert with check (
 create policy "Users manage own favorites" on favorites for all using (auth.uid() = user_id);
 create policy "Anyone can view reviews" on reviews for select using (true);
 create policy "Users manage own notifications" on notifications for all using (auth.uid() = user_id);
+
+-- ============================================================
+-- STORAGE: property-images bucket policies
+-- Create the bucket itself via Dashboard -> Storage -> New bucket
+-- ("property-images", public, 5MB limit, jpeg/png/webp) or the Storage API,
+-- then run these policies (storage.objects has RLS enabled by default).
+-- ============================================================
+create policy "Public read access for property images"
+on storage.objects for select
+using (bucket_id = 'property-images');
+
+create policy "Authenticated users can upload property images"
+on storage.objects for insert
+to authenticated
+with check (bucket_id = 'property-images');
+
+create policy "Authenticated users can update their property images"
+on storage.objects for update
+to authenticated
+using (bucket_id = 'property-images');
+
+create policy "Authenticated users can delete their property images"
+on storage.objects for delete
+to authenticated
+using (bucket_id = 'property-images');
 
 -- Seed amenities
 insert into amenities (name, icon, category) values

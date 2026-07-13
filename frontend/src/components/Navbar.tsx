@@ -1,6 +1,6 @@
 import { Link, NavLink, useNavigate } from 'react-router-dom';
-import { Building2, Heart, LayoutDashboard, LogOut, Menu, Scale, ShieldCheck, X } from 'lucide-react';
-import { useState } from 'react';
+import { Building2, ChevronDown, Heart, LayoutDashboard, LogOut, Menu, Scale, ShieldCheck, User, X } from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { Button } from './Button';
 import { useCompareStore } from '@/store/compareStore';
@@ -14,9 +14,22 @@ export function Navbar() {
   const { profile, session, signOut } = useAuth();
   const navigate = useNavigate();
   const [open, setOpen] = useState(false);
+  const [profileMenuOpen, setProfileMenuOpen] = useState(false);
+  const profileMenuRef = useRef<HTMLDivElement>(null);
   const compareCount = useCompareStore((s) => s.ids.length);
 
+  useEffect(() => {
+    function handleClickOutside(e: MouseEvent) {
+      if (profileMenuRef.current && !profileMenuRef.current.contains(e.target as Node)) {
+        setProfileMenuOpen(false);
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
   async function handleSignOut() {
+    setProfileMenuOpen(false);
     await signOut();
     navigate('/');
   }
@@ -67,12 +80,35 @@ export function Navbar() {
 
         <div className="hidden items-center gap-3 md:flex">
           {session && profile ? (
-            <>
-              <span className="text-sm text-navy-500">Hi, {profile.full_name.split(' ')[0]}</span>
-              <Button variant="ghost" size="sm" onClick={handleSignOut}>
-                <LogOut size={14} /> Sign out
-              </Button>
-            </>
+            <div className="relative" ref={profileMenuRef}>
+              <button
+                onClick={() => setProfileMenuOpen((v) => !v)}
+                className="flex items-center gap-2 rounded-lg px-2 py-1.5 text-sm font-medium text-navy-700 hover:bg-navy-50"
+              >
+                <span className="flex h-7 w-7 items-center justify-center rounded-full bg-brand-gradient text-white">
+                  <User size={14} />
+                </span>
+                {profile.full_name.split(' ')[0]}
+                <ChevronDown size={14} />
+              </button>
+              {profileMenuOpen && (
+                <div className="absolute right-0 top-full mt-2 w-48 rounded-lg border border-navy-100 bg-white py-1 card-shadow">
+                  <Link
+                    to="/profile"
+                    onClick={() => setProfileMenuOpen(false)}
+                    className="flex items-center gap-2 px-3 py-2 text-sm text-navy-700 hover:bg-navy-50"
+                  >
+                    <User size={14} /> Edit profile
+                  </Link>
+                  <button
+                    onClick={handleSignOut}
+                    className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-navy-700 hover:bg-navy-50"
+                  >
+                    <LogOut size={14} /> Sign out
+                  </button>
+                </div>
+              )}
+            </div>
           ) : (
             <>
               <Link to="/login">
@@ -106,6 +142,11 @@ export function Navbar() {
             {session && (
               <NavLink to="/favorites" className={navLinkClass} onClick={() => setOpen(false)}>
                 Favorites
+              </NavLink>
+            )}
+            {session && (
+              <NavLink to="/profile" className={navLinkClass} onClick={() => setOpen(false)}>
+                Edit profile
               </NavLink>
             )}
             {profile && (profile.role === 'owner' || profile.role === 'agent') && (

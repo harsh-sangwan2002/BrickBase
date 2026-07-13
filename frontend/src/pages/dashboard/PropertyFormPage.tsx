@@ -6,7 +6,8 @@ import { propertiesApi } from '@/api/properties';
 import { metaApi } from '@/api/meta';
 import { supabase } from '@/lib/supabase';
 import { Button } from '@/components/Button';
-import { Upload, X } from 'lucide-react';
+import { Upload, Sparkles, X } from 'lucide-react';
+import { ApiRequestError } from '@/api/client';
 
 interface FormValues {
   property_type: 'land' | 'residential' | 'commercial';
@@ -44,15 +45,43 @@ export function PropertyFormPage() {
     enabled: isEdit,
   });
 
-  const { register, handleSubmit, reset, watch } = useForm<FormValues>({
+  const { register, handleSubmit, reset, watch, setValue } = useForm<FormValues>({
     defaultValues: { price_negotiable: false, area_unit: 'sqft', property_type: 'residential', listing_type: 'sale' },
   });
   const propertyType = watch('property_type');
 
+  function handleFillDummyData() {
+    setValue('title', '3 BHK Apartment in Sector 57', { shouldDirty: true });
+    setValue('description', 'Spacious and well-ventilated apartment with modern amenities, close to schools, hospitals and the metro station. Ideal for families.', { shouldDirty: true });
+    setValue('price', 9800000, { shouldDirty: true });
+    setValue('price_negotiable', true, { shouldDirty: true });
+    setValue('area_value', 1650, { shouldDirty: true });
+    setValue('area_unit', 'sqft', { shouldDirty: true });
+    setValue('address', 'Plot 42, DLF Phase 4', { shouldDirty: true });
+    setValue('city', 'Gurugram', { shouldDirty: true });
+    setValue('state', 'Haryana', { shouldDirty: true });
+    setValue('pincode', '122009', { shouldDirty: true });
+    setValue('bhk', 3, { shouldDirty: true });
+    setValue('bathrooms', 2, { shouldDirty: true });
+    setValue('furnishing_status', 'semi_furnished', { shouldDirty: true });
+    setValue('possession_status', 'ready_to_move', { shouldDirty: true });
+    if (amenities?.items.length) {
+      setSelectedAmenities(amenities.items.slice(0, 3).map((a) => a.id));
+    }
+  }
+
   useEffect(() => {
     if (existing) {
-      reset(existing as unknown as FormValues);
+      const { id: _id, owner_id: _ownerId, property_images: _images, ...formFields } = existing;
+      void _id;
+      void _ownerId;
+      void _images;
+      reset(formFields as unknown as FormValues);
       setImages(existing.property_images.map((img) => ({ url: img.image_url, id: img.id })));
+      const existingAmenityIds = (existing as unknown as { property_amenities?: { amenity_id: number }[] }).property_amenities;
+      if (existingAmenityIds?.length) {
+        setSelectedAmenities(existingAmenityIds.map((pa) => pa.amenity_id));
+      }
     }
   }, [existing, reset]);
 
@@ -64,6 +93,7 @@ export function PropertyFormPage() {
     },
     onSuccess: async (property) => {
       queryClient.invalidateQueries({ queryKey: ['my-listings'] });
+      queryClient.invalidateQueries({ queryKey: ['property', String(property.id)] });
       if (!isEdit) {
         for (const img of images) {
           await propertiesApi.addImage(property.id, img.url, images.indexOf(img) === 0);
@@ -100,7 +130,14 @@ export function PropertyFormPage() {
 
   return (
     <form onSubmit={handleSubmit((v) => saveMutation.mutate(v))} className="max-w-3xl space-y-6">
-      <h1 className="text-xl font-bold text-navy-900">{isEdit ? 'Edit listing' : 'New listing'}</h1>
+      <div className="flex items-center justify-between">
+        <h1 className="text-xl font-bold text-navy-900">{isEdit ? 'Edit listing' : 'New listing'}</h1>
+        {!isEdit && (
+          <Button type="button" variant="secondary" size="sm" onClick={handleFillDummyData}>
+            <Sparkles size={14} /> Fill dummy data
+          </Button>
+        )}
+      </div>
 
       <div className="grid grid-cols-2 gap-4">
         <div>
@@ -241,6 +278,12 @@ export function PropertyFormPage() {
           </label>
         </div>
       </div>
+
+      {saveMutation.isError && (
+        <p className="text-sm text-red-600">
+          {saveMutation.error instanceof ApiRequestError ? saveMutation.error.message : 'Failed to save listing.'}
+        </p>
+      )}
 
       <Button type="submit" disabled={saveMutation.isPending}>
         {saveMutation.isPending ? 'Saving...' : isEdit ? 'Save changes' : 'Create listing'}
