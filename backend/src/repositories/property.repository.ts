@@ -1,4 +1,31 @@
 import { supabaseAdmin } from '../config/supabase';
+import { searchService, PropertySearchDoc } from '../services/search.service';
+
+function toSearchDoc(row: {
+  id: number;
+  title: string;
+  description: string;
+  city: string;
+  property_type: string;
+  listing_type: string;
+  price: number;
+  area_value: number;
+  bhk: number | null;
+  status: string;
+}): PropertySearchDoc {
+  return {
+    id: row.id,
+    title: row.title,
+    description: row.description,
+    city: row.city,
+    property_type: row.property_type,
+    listing_type: row.listing_type,
+    price: row.price,
+    area_value: row.area_value,
+    bhk: row.bhk,
+    status: row.status,
+  };
+}
 
 export interface SearchPropertiesParams {
   property_type?: string;
@@ -28,14 +55,44 @@ function encodeCursor(created_at: string, id: number): string {
   return Buffer.from(JSON.stringify({ created_at, id })).toString('base64');
 }
 
+const PROPERTY_SUMMARY_COLUMNS =
+  'id, title, property_type, listing_type, price, area_value, area_unit, city, bhk, is_verified, is_featured, created_at, property_images(image_url, is_cover)';
+
+function meilisearchFilters(params: SearchPropertiesParams): string[] {
+  const filters = [`status = active`];
+  if (params.property_type) filters.push(`property_type = ${params.property_type}`);
+  if (params.listing_type) filters.push(`listing_type = ${params.listing_type}`);
+  if (params.city) filters.push(`city = "${params.city}"`);
+  if (params.min_price) filters.push(`price >= ${params.min_price}`);
+  if (params.max_price) filters.push(`price <= ${params.max_price}`);
+  if (params.min_area) filters.push(`area_value >= ${params.min_area}`);
+  if (params.max_area) filters.push(`area_value <= ${params.max_area}`);
+  if (params.bhk) filters.push(`bhk = ${params.bhk}`);
+  return filters;
+}
+
 export const propertyRepository = {
   async search(params: SearchPropertiesParams) {
+    // Typo-tolerant, faceted search: when there's a free-text query and Meilisearch is
+    // configured, get relevance-ranked ids from it, then hydrate full rows from Postgres —
+    // controller/service layers are untouched, only this query path changes (README §13).
+    if (params.q && searchService.isConfigured) {
+      const ids = await searchService.searchIds(params.q, meilisearchFilters(params), params.limit);
+      if (ids.length === 0) return { items: [], next_cursor: null, total: 0 };
+
+      const { data, error } = await supabaseAdmin.from('properties').select(PROPERTY_SUMMARY_COLUMNS).in('id', ids);
+      if (error) throw error;
+
+      const byId = new Map((data ?? []).map((row) => [row.id, row]));
+      const items = ids.map((id) => byId.get(id)).filter((row): row is NonNullable<typeof row> => Boolean(row));
+      // Meilisearch's own offset/limit pagination isn't wired to the keyset cursor used
+      // elsewhere — the typo-tolerant path returns its top page of relevance-ranked results.
+      return { items, next_cursor: null, total: items.length };
+    }
+
     let query = supabaseAdmin
       .from('properties')
-      .select(
-        'id, title, property_type, listing_type, price, area_value, area_unit, city, bhk, is_verified, is_featured, created_at, property_images(image_url, is_cover)',
-        { count: 'estimated' }
-      )
+      .select(PROPERTY_SUMMARY_COLUMNS, { count: 'estimated' })
       .eq('status', 'active');
 
     if (params.property_type) query = query.eq('property_type', params.property_type);
@@ -77,6 +134,30 @@ export const propertyRepository = {
     const next_cursor = items.length === params.limit && last ? encodeCursor(last.created_at, last.id) : null;
 
     return { items, next_cursor, total: count ?? undefined };
+  },
+
+  // Used by the saved-search alert cron job — same filters as search(), but only listings
+  // created since the saved search's last notification.
+  async findNewMatches(params: Omit<SearchPropertiesParams, 'sort' | 'cursor' | 'limit'>, createdAfter: string) {
+    let query = supabaseAdmin
+      .from('properties')
+      .select('id, title, city, price')
+      .eq('status', 'active')
+      .gt('created_at', createdAfter);
+
+    if (params.property_type) query = query.eq('property_type', params.property_type);
+    if (params.listing_type) query = query.eq('listing_type', params.listing_type);
+    if (params.city) query = query.ilike('city', params.city);
+    if (params.min_price) query = query.gte('price', params.min_price);
+    if (params.max_price) query = query.lte('price', params.max_price);
+    if (params.min_area) query = query.gte('area_value', params.min_area);
+    if (params.max_area) query = query.lte('area_value', params.max_area);
+    if (params.bhk) query = query.eq('bhk', params.bhk);
+    if (params.q) query = query.textSearch('search_vector', params.q, { type: 'websearch' });
+
+    const { data, error } = await query.order('created_at', { ascending: false }).limit(20);
+    if (error) throw error;
+    return data ?? [];
   },
 
   async findById(id: number) {
@@ -136,6 +217,7 @@ export const propertyRepository = {
         .from('property_amenities')
         .insert(amenity_ids.map((amenity_id) => ({ property_id: data.id, amenity_id })));
     }
+    void searchService.indexProperty(toSearchDoc(data));
     return data;
   },
 
@@ -157,6 +239,7 @@ export const propertyRepository = {
           .insert(amenity_ids.map((amenity_id) => ({ property_id: id, amenity_id })));
       }
     }
+    void searchService.indexProperty(toSearchDoc(data));
     return data;
   },
 
@@ -168,6 +251,7 @@ export const propertyRepository = {
       .select('*')
       .single();
     if (error) throw error;
+    void searchService.indexProperty(toSearchDoc(data));
     return data;
   },
 

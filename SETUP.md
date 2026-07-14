@@ -39,7 +39,22 @@ Vite + React + TypeScript, TanStack Query for server state, Zustand for the comp
 for forms, React Router with role-gated routes. Theme is dark navy + white with linear/radial gradients
 (`src/index.css`, Tailwind v4 `@theme`).
 
-## 4. Creating the first admin
+## 4. Property location map + nearby amenities
+
+No setup required — this runs entirely on free OpenStreetMap infrastructure, no API key or billing account
+anywhere:
+
+- **Map tiles**: rendered client-side with Leaflet against the public OSM tile server
+- **Geocoding** (address/pincode → lat/lng): [Nominatim](https://nominatim.org/), called once per listing — the
+  result is cached permanently on `properties.latitude/longitude` so it's never re-geocoded
+- **Nearby amenities** (bus stops, shops, hospitals, schools, restaurants, pharmacies):
+  [Overpass API](https://overpass-api.de/), cached in-memory on the backend for 24h per area
+
+Both are public community-run services with fair-use rate limits — fine for this app's per-listing, cached usage
+pattern. If you outgrow the public Overpass instance, self-hosting one or switching to a paid geocoding provider
+is a drop-in change in `backend/src/services/maps.service.ts`.
+
+## 5. Creating the first admin
 
 There is no public admin signup (by design). After signing up a normal user, promote them manually:
 
@@ -54,6 +69,8 @@ update profiles set role = 'admin', status = 'active' where id = '<user-uuid>';
 - Search/filter/sort with keyset pagination, full-text search, comparison (up to 4), similar listings
 - Enquiry form (guest or logged-in, rate-limited) + owner/agent enquiry inbox
 - Favorites, EMI calculator, agent reviews
+- Property location map + nearby amenities (bus stops, shops, hospitals, schools, restaurants, pharmacies) via
+  OpenStreetMap — no API key or billing required
 - Admin dashboard: analytics, listing moderation queue, user management, reports queue, audit log
 
 ## Deferred (see README §13)

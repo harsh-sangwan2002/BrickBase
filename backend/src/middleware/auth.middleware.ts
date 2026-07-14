@@ -16,6 +16,7 @@ async function resolveUser(token: string) {
     .single();
 
   if (profileError || !profile) return null;
+
   return { id: data.user.id, email: data.user.email ?? undefined, profile };
 }
 

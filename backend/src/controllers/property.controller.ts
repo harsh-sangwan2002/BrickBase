@@ -27,6 +27,11 @@ export const propertyController = {
     res.json({ data: { items }, error: null });
   }),
 
+  nearby: asyncHandler(async (req: Request, res: Response) => {
+    const result = await propertyService.nearbyAmenities(Number(req.params.id));
+    res.json({ data: result, error: null });
+  }),
+
   create: asyncHandler(async (req: Request, res: Response) => {
     const property = await propertyService.create(req.user!.profile, req.body);
     res.status(201).json({ data: property, error: null });

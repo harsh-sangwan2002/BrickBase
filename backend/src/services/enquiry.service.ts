@@ -3,6 +3,7 @@ import { propertyRepository } from '../repositories/property.repository';
 import { Profile } from '../types';
 import { ApiException } from '../middleware/errorHandler.middleware';
 import { notificationService } from './notification.service';
+import { conversationService } from './conversation.service';
 
 export const enquiryService = {
   async create(propertyId: number, buyerId: string | null, payload: Record<string, unknown>) {
@@ -12,6 +13,14 @@ export const enquiryService = {
     }
     const enquiry = await enquiryRepository.create(propertyId, buyerId, payload);
     await notificationService.notifyEnquiryReceived(property.owner_id, property.id, property.title);
+
+    // Logged-in enquiries also open (or reuse) an in-app conversation with the owner/agent —
+    // the enquiry message becomes the first chat message.
+    if (buyerId && buyerId !== property.owner_id) {
+      const message = (payload as { message?: string }).message ?? 'New enquiry';
+      await conversationService.startFromEnquiry(propertyId, property.owner_id, buyerId, message).catch(() => undefined);
+    }
+
     return enquiry;
   },
 

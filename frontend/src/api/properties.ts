@@ -1,5 +1,5 @@
 import { apiClient } from './client';
-import type { PropertyDetail, PropertySummary } from '@/types';
+import type { NearbyAmenities, PropertyDetail, PropertySummary } from '@/types';
 
 export interface SearchFilters {
   property_type?: string;
@@ -34,6 +34,8 @@ export const propertiesApi = {
   compare: (ids: number[]) => apiClient.get<{ items: PropertyDetail[] }>(`/properties/compare?ids=${ids.join(',')}`),
 
   similar: (id: number | string) => apiClient.get<{ items: PropertySummary[] }>(`/properties/${id}/similar`),
+
+  nearby: (id: number | string) => apiClient.get<NearbyAmenities>(`/properties/${id}/nearby`),
 
   mine: () => apiClient.get<{ items: PropertyDetail[] }>('/properties/mine'),
 

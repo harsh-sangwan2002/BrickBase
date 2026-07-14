@@ -2,6 +2,7 @@ import { BrowserRouter, Route, Routes } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { AuthProvider } from '@/hooks/useAuth';
 import { ProtectedRoute } from '@/routes/ProtectedRoute';
+import { ChatWidget } from '@/components/ChatWidget';
 
 import { PublicLayout } from '@/layouts/PublicLayout';
 import { DashboardLayout } from '@/layouts/DashboardLayout';
@@ -15,6 +16,9 @@ import { Signup } from '@/pages/Signup';
 import { Favorites } from '@/pages/Favorites';
 import { Compare } from '@/pages/Compare';
 import { Profile } from '@/pages/Profile';
+import { Messages } from '@/pages/Messages';
+import { MessageThread } from '@/pages/MessageThread';
+import { SavedSearches } from '@/pages/SavedSearches';
 
 import { MyListings } from '@/pages/dashboard/MyListings';
 import { PropertyFormPage } from '@/pages/dashboard/PropertyFormPage';
@@ -46,6 +50,9 @@ function App() {
               <Route element={<ProtectedRoute />}>
                 <Route path="/favorites" element={<Favorites />} />
                 <Route path="/profile" element={<Profile />} />
+                <Route path="/messages" element={<Messages />} />
+                <Route path="/messages/:id" element={<MessageThread />} />
+                <Route path="/saved-searches" element={<SavedSearches />} />
               </Route>
             </Route>
 
@@ -67,6 +74,7 @@ function App() {
               </Route>
             </Route>
           </Routes>
+          <ChatWidget />
         </BrowserRouter>
       </AuthProvider>
     </QueryClientProvider>

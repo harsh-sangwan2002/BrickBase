@@ -46,6 +46,29 @@ declare global {
   }
 }
 
+export interface AiChatAction {
+  type: 'navigate';
+  path: string;
+  label?: string;
+}
+
+export interface AiChatSession {
+  id: number;
+  user_id: string;
+  title: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface AiChatMessage {
+  id: number;
+  session_id: number;
+  role: 'user' | 'assistant';
+  content: string;
+  action: AiChatAction | null;
+  created_at: string;
+}
+
 export interface ApiSuccess<T> {
   data: T;
   error: null;

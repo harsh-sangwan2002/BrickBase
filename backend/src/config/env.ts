@@ -20,4 +20,9 @@ export const env = {
   frontendOrigin: process.env.FRONTEND_ORIGIN ?? 'http://localhost:5173',
   resendApiKey: process.env.RESEND_API_KEY ?? '',
   emailFrom: process.env.EMAIL_FROM ?? 'BrickBase <no-reply@brickbase.app>',
+  meilisearchHost: process.env.MEILISEARCH_HOST ?? '',
+  meilisearchApiKey: process.env.MEILI_MASTER_KEY ?? '',
+  groqApiKey: process.env.GROQ_API_KEY ?? '',
+  groqApiBase: process.env.GROQ_API_BASE ?? 'https://api.groq.com/openai/v1',
+  groqModel: process.env.GROQ_MODEL ?? 'llama-3.3-70b-versatile',
 };

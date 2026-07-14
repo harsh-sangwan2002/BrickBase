@@ -1,19 +1,47 @@
-import { Search } from 'lucide-react';
+import { RotateCcw, Search } from 'lucide-react';
 import type { SearchFilters } from '@/api/properties';
+import { Button } from '@/components/Button';
 
 interface FilterBarProps {
   filters: SearchFilters;
   onChange: (filters: SearchFilters) => void;
+  onReset: () => void;
   cities: string[];
 }
 
-export function FilterBar({ filters, onChange, cities }: FilterBarProps) {
+// Keys that count as an "active filter" — sort/limit/cursor are UI/pagination state, not filters.
+const FILTER_KEYS: (keyof SearchFilters)[] = [
+  'q',
+  'property_type',
+  'listing_type',
+  'city',
+  'min_price',
+  'max_price',
+  'min_area',
+  'max_area',
+  'bhk',
+];
+
+export function FilterBar({ filters, onChange, onReset, cities }: FilterBarProps) {
   function set<K extends keyof SearchFilters>(key: K, value: SearchFilters[K]) {
     onChange({ ...filters, [key]: value, cursor: undefined });
   }
 
+  const activeCount = FILTER_KEYS.filter((key) => filters[key] !== undefined && filters[key] !== '').length;
+
   return (
     <div className="rounded-2xl border border-navy-100 bg-white p-4 card-shadow">
+      <div className="mb-3 flex items-center justify-between">
+        <span className="text-sm font-semibold text-navy-700">
+          Filters {activeCount > 0 && <span className="text-navy-400">({activeCount} active)</span>}
+        </span>
+        {activeCount > 0 && (
+          <Button variant="ghost" size="sm" onClick={onReset}>
+            <RotateCcw size={13} /> Reset filters
+          </Button>
+        )}
+      </div>
+
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-6">
         <div className="relative lg:col-span-2">
           <Search size={16} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-navy-300" />

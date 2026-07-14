@@ -89,6 +89,77 @@ export interface Enquiry {
   properties?: { id: number; title: string };
 }
 
+export interface NearbyPlace {
+  name: string;
+  vicinity: string;
+  distanceMeters: number;
+}
+
+export interface NearbyCategory {
+  type: string;
+  label: string;
+  places: NearbyPlace[];
+}
+
+export interface NearbyAmenities {
+  latitude: number;
+  longitude: number;
+  categories: NearbyCategory[];
+}
+
+export interface Conversation {
+  id: number;
+  property_id: number | null;
+  buyer_id: string;
+  owner_id: string;
+  last_message_at: string;
+  created_at: string;
+  properties?: { id: number; title: string } | null;
+  buyer?: { id: string; full_name: string; avatar_url: string | null };
+  owner?: { id: string; full_name: string; avatar_url: string | null };
+}
+
+export interface Message {
+  id: number;
+  conversation_id: number;
+  sender_id: string;
+  body: string;
+  is_read: boolean;
+  created_at: string;
+}
+
+export interface SavedSearch {
+  id: number;
+  user_id: string;
+  filters: Record<string, unknown>;
+  alert_enabled: boolean;
+  last_notified_at: string;
+  created_at: string;
+}
+
+export interface AiChatAction {
+  type: 'navigate';
+  path: string;
+  label?: string;
+}
+
+export interface AiChatSession {
+  id: number;
+  user_id: string;
+  title: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface AiChatMessage {
+  id: number;
+  session_id: number;
+  role: 'user' | 'assistant';
+  content: string;
+  action: AiChatAction | null;
+  created_at: string;
+}
+
 export interface ApiEnvelope<T> {
   data: T | null;
   error: { code: string; message: string } | null;

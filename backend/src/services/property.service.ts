@@ -1,6 +1,7 @@
 import { propertyRepository, SearchPropertiesParams } from '../repositories/property.repository';
 import { Profile } from '../types';
 import { ApiException } from '../middleware/errorHandler.middleware';
+import { mapsService } from './maps.service';
 
 function assertOwnerOrAdmin(property: { owner_id: string }, actor: Profile) {
   if (actor.role === 'admin') return;
@@ -32,6 +33,31 @@ export const propertyService = {
     const property = await propertyRepository.findById(id);
     if (!property) throw new ApiException(404, 'NOT_FOUND', 'Property not found');
     return propertyRepository.findSimilar(property);
+  },
+
+  async nearbyAmenities(id: number) {
+    const property = await propertyRepository.findById(id);
+    if (!property) throw new ApiException(404, 'NOT_FOUND', 'Property not found');
+
+    let { latitude, longitude } = property as { latitude: number | null; longitude: number | null };
+
+    // Geocode once from the address/pincode and cache the result on the row — avoids
+    // re-geocoding on every page view. Falls back to progressively broader queries since
+    // an exact street address is often not mapped in OpenStreetMap.
+    if (latitude == null || longitude == null) {
+      const candidates = [
+        `${property.address}, ${property.city}, ${property.state} ${property.pincode}, India`,
+        `${property.pincode}, ${property.city}, ${property.state}, India`,
+        `${property.city}, ${property.state}, India`,
+      ];
+      const geocoded = await mapsService.geocodeFirstMatch(candidates);
+      latitude = geocoded.latitude;
+      longitude = geocoded.longitude;
+      await propertyRepository.update(id, { latitude, longitude });
+    }
+
+    const categories = await mapsService.nearbyAmenities(latitude, longitude);
+    return { latitude, longitude, categories };
   },
 
   create(actor: Profile, payload: Record<string, unknown>) {

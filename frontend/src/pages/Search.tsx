@@ -1,15 +1,19 @@
 import { useEffect, useState } from 'react';
-import { useSearchParams } from 'react-router-dom';
-import { useQuery } from '@tanstack/react-query';
+import { Link, useSearchParams } from 'react-router-dom';
+import { useMutation, useQuery } from '@tanstack/react-query';
+import { BellPlus, CheckCircle2 } from 'lucide-react';
 import { propertiesApi, type SearchFilters } from '@/api/properties';
 import { metaApi } from '@/api/meta';
+import { savedSearchesApi } from '@/api/savedSearches';
 import { FilterBar } from '@/features/properties/FilterBar';
 import { PropertyCard } from '@/features/properties/PropertyCard';
 import { Spinner } from '@/components/Spinner';
 import { Button } from '@/components/Button';
+import { useAuth } from '@/hooks/useAuth';
 
 export function Search() {
   const [searchParams] = useSearchParams();
+  const { session } = useAuth();
   const [filters, setFilters] = useState<SearchFilters>({
     q: searchParams.get('q') ?? undefined,
     property_type: searchParams.get('property_type') ?? undefined,
@@ -42,13 +46,48 @@ export function Search() {
     setFilters((f) => ({ ...f, cursor: prev || undefined }));
   }
 
+  function resetFilters() {
+    setFilters({ sort: 'newest', limit: 12 });
+    setCursorStack([]);
+  }
+
+  const saveSearchMutation = useMutation({
+    mutationFn: () => {
+      const { sort: _sort, limit: _limit, cursor: _cursor, ...savedFilters } = filters;
+      void _sort;
+      void _limit;
+      void _cursor;
+      return savedSearchesApi.create(savedFilters);
+    },
+  });
+
   return (
     <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6">
-      <h1 className="text-2xl font-bold text-navy-900">Browse properties</h1>
-      <p className="mt-1 text-sm text-navy-400">{data?.items.length ?? 0} results on this page</p>
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <div>
+          <h1 className="text-2xl font-bold text-navy-900">Browse properties</h1>
+          <p className="mt-1 text-sm text-navy-400">{data?.items.length ?? 0} results on this page</p>
+        </div>
+        {session && (
+          <div className="flex items-center gap-2">
+            {saveSearchMutation.isSuccess ? (
+              <span className="flex items-center gap-1.5 text-sm text-emerald-600">
+                <CheckCircle2 size={15} /> Search saved
+              </span>
+            ) : (
+              <Button variant="secondary" size="sm" onClick={() => saveSearchMutation.mutate()} disabled={saveSearchMutation.isPending}>
+                <BellPlus size={14} /> Save this search
+              </Button>
+            )}
+            <Link to="/saved-searches" className="text-xs font-semibold text-navy-500 hover:underline">
+              Manage saved searches
+            </Link>
+          </div>
+        )}
+      </div>
 
       <div className="mt-6">
-        <FilterBar filters={filters} onChange={setFilters} cities={citiesData?.items ?? []} />
+        <FilterBar filters={filters} onChange={setFilters} onReset={resetFilters} cities={citiesData?.items ?? []} />
       </div>
 
       {isLoading ? (

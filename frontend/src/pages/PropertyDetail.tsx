@@ -10,6 +10,7 @@ import { formatArea, formatPrice, propertyTypeLabel } from '@/utils/format';
 import { EnquiryForm } from '@/features/enquiries/EnquiryForm';
 import { EmiCalculator } from '@/features/properties/EmiCalculator';
 import { PropertyCard } from '@/features/properties/PropertyCard';
+import { NearbyAmenities } from '@/features/properties/NearbyAmenities';
 import { useAuth } from '@/hooks/useAuth';
 import { useCompareStore } from '@/store/compareStore';
 import { Button } from '@/components/Button';
@@ -144,6 +145,8 @@ export function PropertyDetail() {
               </Button>
             )}
           </div>
+
+          <NearbyAmenities propertyId={propertyId} title={property.title} />
 
           {similar && similar.items.length > 0 && (
             <div className="mt-10">

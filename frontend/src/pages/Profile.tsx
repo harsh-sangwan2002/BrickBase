@@ -62,7 +62,7 @@ export function Profile() {
         </div>
       </div>
 
-      <form onSubmit={handleSubmit(onSubmit)} className="mt-8 space-y-4 rounded-2xl border border-navy-100 p-6 card-shadow">
+      <form onSubmit={handleSubmit(onSubmit)} className="mt-6 space-y-4 rounded-2xl border border-navy-100 p-6 card-shadow">
         <div>
           <label className="text-sm font-medium text-navy-700">Full name</label>
           <input

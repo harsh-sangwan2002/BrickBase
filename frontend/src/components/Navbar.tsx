@@ -1,5 +1,5 @@
 import { Link, NavLink, useNavigate } from 'react-router-dom';
-import { Building2, ChevronDown, Heart, LayoutDashboard, LogOut, Menu, Scale, ShieldCheck, User, X } from 'lucide-react';
+import { Building2, ChevronDown, Heart, LayoutDashboard, LogOut, MessageCircle, Menu, Scale, ShieldCheck, User, X } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { Button } from './Button';
@@ -34,6 +34,8 @@ export function Navbar() {
     navigate('/');
   }
 
+  const canManageListings = profile?.role === 'owner' || profile?.role === 'agent';
+
   return (
     <header className="sticky top-0 z-40 border-b border-navy-100 bg-white/90 backdrop-blur">
       <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3 sm:px-6">
@@ -62,7 +64,14 @@ export function Navbar() {
               </span>
             </NavLink>
           )}
-          {profile && (profile.role === 'owner' || profile.role === 'agent') && (
+          {session && (
+            <NavLink to="/messages" className={navLinkClass}>
+              <span className="inline-flex items-center gap-1">
+                <MessageCircle size={14} /> Messages
+              </span>
+            </NavLink>
+          )}
+          {canManageListings && (
             <NavLink to="/dashboard/listings" className={navLinkClass}>
               <span className="inline-flex items-center gap-1">
                 <LayoutDashboard size={14} /> My Listings
@@ -145,11 +154,16 @@ export function Navbar() {
               </NavLink>
             )}
             {session && (
+              <NavLink to="/messages" className={navLinkClass} onClick={() => setOpen(false)}>
+                Messages
+              </NavLink>
+            )}
+            {session && (
               <NavLink to="/profile" className={navLinkClass} onClick={() => setOpen(false)}>
                 Edit profile
               </NavLink>
             )}
-            {profile && (profile.role === 'owner' || profile.role === 'agent') && (
+            {canManageListings && (
               <NavLink to="/dashboard/listings" className={navLinkClass} onClick={() => setOpen(false)}>
                 My Listings
               </NavLink>

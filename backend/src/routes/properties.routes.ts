@@ -17,6 +17,7 @@ router.get('/properties/compare', validate(compareQuerySchema, 'query'), propert
 router.get('/properties/mine', authMiddleware, roleGuard('owner', 'agent', 'admin'), propertyController.mine);
 router.get('/properties/:id', propertyController.detail);
 router.get('/properties/:id/similar', propertyController.similar);
+router.get('/properties/:id/nearby', propertyController.nearby);
 
 router.post(
   '/properties',

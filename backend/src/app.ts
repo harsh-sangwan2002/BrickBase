@@ -12,6 +12,9 @@ import enquiriesRoutes from './routes/enquiries.routes';
 import favoritesRoutes from './routes/favorites.routes';
 import adminRoutes from './routes/admin.routes';
 import metaRoutes from './routes/meta.routes';
+import conversationsRoutes from './routes/conversations.routes';
+import savedSearchesRoutes from './routes/savedSearches.routes';
+import aiChatRoutes from './routes/aiChat.routes';
 
 export function createApp() {
   const app = express();
@@ -30,6 +33,9 @@ export function createApp() {
   app.use('/api/v1', favoritesRoutes);
   app.use('/api/v1', adminRoutes);
   app.use('/api/v1', metaRoutes);
+  app.use('/api/v1', conversationsRoutes);
+  app.use('/api/v1', savedSearchesRoutes);
+  app.use('/api/v1', aiChatRoutes);
 
   app.use(notFoundHandler);
   app.use(errorHandler);
