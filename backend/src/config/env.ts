@@ -17,6 +17,8 @@ export const env = {
   nodeEnv: process.env.NODE_ENV ?? 'development',
   supabaseUrl: required('SUPABASE_URL'),
   supabaseServiceRoleKey: required('SUPABASE_SERVICE_ROLE_KEY'),
+  // Comma-separated in production (e.g. the Vercel production domain plus preview
+  // deployment URLs) — see corsOrigins below for how this is consumed.
   frontendOrigin: process.env.FRONTEND_ORIGIN ?? 'http://localhost:5173',
   resendApiKey: process.env.RESEND_API_KEY ?? '',
   emailFrom: process.env.EMAIL_FROM ?? 'BrickBase <no-reply@brickbase.app>',
@@ -26,3 +28,5 @@ export const env = {
   groqApiBase: process.env.GROQ_API_BASE ?? 'https://api.groq.com/openai/v1',
   groqModel: process.env.GROQ_MODEL ?? 'llama-3.3-70b-versatile',
 };
+
+export const corsOrigins = env.frontendOrigin.split(',').map((origin) => origin.trim());

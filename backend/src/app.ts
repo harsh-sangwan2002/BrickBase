@@ -2,7 +2,7 @@ import cors from 'cors';
 import express from 'express';
 import helmet from 'helmet';
 import morgan from 'morgan';
-import { env } from './config/env';
+import { corsOrigins, env } from './config/env';
 import { errorHandler, notFoundHandler } from './middleware/errorHandler.middleware';
 import { apiRateLimit } from './middleware/rateLimit.middleware';
 
@@ -20,7 +20,7 @@ export function createApp() {
   const app = express();
 
   app.use(helmet());
-  app.use(cors({ origin: env.frontendOrigin, credentials: true }));
+  app.use(cors({ origin: corsOrigins, credentials: true }));
   app.use(express.json({ limit: '2mb' }));
   app.use(morgan(env.nodeEnv === 'development' ? 'dev' : 'combined'));
   app.use('/api/v1', apiRateLimit);
