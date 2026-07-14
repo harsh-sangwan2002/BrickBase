@@ -4,7 +4,10 @@ services:
     runtime: node
     rootDir: backend
     plan: free
-    buildCommand: npm install && npm run build
+    # --include=dev is required even though NODE_ENV=production is set below — npm skips
+    # devDependencies (typescript included) when NODE_ENV=production, which would otherwise
+    # fall back to whatever tsc ships on the base image instead of our pinned version.
+    buildCommand: npm install --include=dev && npm run build
     startCommand: npm start
     healthCheckPath: /health
     envVars:
